@@ -1,0 +1,22 @@
+# Build directories
+build/
+**/build/
+*.o
+*.a
+
+# IDE
+.vscode/
+.idea/
+
+# Compiled executables
+environment
+quizCluster
+quizRansac
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
