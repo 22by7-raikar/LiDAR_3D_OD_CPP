@@ -1,5 +1,4 @@
-/* \author Aaron Brown */
-// Quiz on implementing simple RANSAC line fitting
+// 2D and 3D RANSAC Plane Fitting
 
 #include "../../render/render.h"
 #include "../../render/box.h"
