@@ -1,4 +1,4 @@
-# LiDAR 3D Object Detection and Tracking
+# LiDAR 3D Object Detection
 
 <img src="media/final.gif" width="700" height="400" />
 
