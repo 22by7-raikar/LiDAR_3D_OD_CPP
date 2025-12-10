@@ -1,4 +1,3 @@
-/* \author Aaron Brown */
 // Quiz on implementing simple RANSAC line fitting
 
 #include "../../render/render.h"
@@ -65,7 +64,7 @@ std::unordered_set<int> Ransac(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int ma
 	std::unordered_set<int> inliersResult;
 	srand(time(NULL));
 	
-	// Done: Implement RANSAC2D
+	// Implement RANSAC2D
 
 	// For max iterations 
 	for(int i = 0; i < maxIterations; i++)
@@ -112,8 +111,6 @@ std::unordered_set<int> RansacPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, i
 {
 	std::unordered_set<int> inliersResult;
 	srand(time(NULL));
-	
-	// TODO: Fill in this function
 
 	// For max iterations 
 	for(int i = 0; i < maxIterations; i++)
@@ -180,7 +177,7 @@ int main ()
 	// pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = CreateData3D();
 
-	// Done: Change the max iteration and distance tolerance arguments for Ransac function
+	// Change the max iteration and distance tolerance arguments for Ransac function
 	std::unordered_set<int> inliers = RansacPlane(cloud, 100, 0.2);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr  cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
