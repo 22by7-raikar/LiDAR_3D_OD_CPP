@@ -1,5 +1,4 @@
-/* \author Aaron Brown */
-// Quiz on implementing kd tree
+//2D and 3D KD-Tree Implementations
 
 #include "../../render/render.h"
 
