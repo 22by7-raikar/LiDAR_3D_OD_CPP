@@ -8,7 +8,7 @@
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData()
 {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
   	// Add inliers
   	float scatter = 0.6;
   	for(int i = -5; i < 5; i++)
@@ -51,7 +51,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr CreateData3D()
 
 pcl::visualization::PCLVisualizer::Ptr initScene()
 {
-	pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer ("2D Viewer"));
+	pcl::visualization::PCLVisualizer::Ptr viewer = std::make_shared<pcl::visualization::PCLVisualizer>("2D Viewer");
 	viewer->setBackgroundColor (0, 0, 0);
   	viewer->initCameraParameters();
   	viewer->setCameraPosition(0, 0, 15, 0, 1, 0);
@@ -180,8 +180,8 @@ int main ()
 	// Change the max iteration and distance tolerance arguments for Ransac function
 	std::unordered_set<int> inliers = RansacPlane(cloud, 100, 0.2);
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr  cloudInliers(new pcl::PointCloud<pcl::PointXYZ>());
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudInliers = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudOutliers = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
 	for(int index = 0; index < cloud->points.size(); index++)
 	{

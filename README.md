@@ -4,80 +4,53 @@
 
 ## Overview
 
-This project implements a complete LiDAR-based 3D object detection and tracking pipeline for autonomous vehicles. The system processes point cloud data from LiDAR sensors to detect, classify, and track obstacles in real-time.
+C++14 implementation of LiDAR-based 3D object detection with custom RANSAC, KD-Tree, and clustering algorithms.
 
-## Key Features
+## Features
 
-### Custom Algorithm Implementations
-- **3D RANSAC Plane Segmentation** - Custom implementation for ground plane removal
-- **3D KD-Tree** - Efficient spatial data structure for point cloud operations
-- **3D Euclidean Clustering** - Custom clustering algorithm for object grouping
+- **Custom 3D RANSAC** - Ground plane segmentation
+- **Custom 3D KD-Tree** - Spatial indexing for fast nearest neighbor search  
+- **Custom Euclidean Clustering** - Object grouping with KD-Tree optimization
+- **Object Tracking** - Multi-object tracking with velocity estimation and classification
 
-### Point Cloud Processing Pipeline
-1. **Voxel Grid Downsampling** - Reduces computational load while preserving structure
-2. **Region of Interest Filtering** - Focuses on relevant areas around the vehicle
-3. **Ground Plane Segmentation** - Separates road surface from obstacles using custom RANSAC
-4. **Euclidean Clustering** - Groups obstacle points using custom KD-Tree
-5. **Bounding Box Generation** - Creates oriented bounding boxes using PCA
+## Requirements
 
-### Technical Specifications
-- **Environment**: Ubuntu 20.04
-- **PCL Version**: 1.11
-- **C++ Standard**: C++14
-- **Compiler**: GCC 9.4.0
+- Ubuntu 20.04+
+- PCL 1.11+
+- Eigen 3
+- CMake 3.10+
+- C++14 compiler
 
+## Build & Run
+
+```bash
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+
+# Basic detection
+./environment
+
+# With tracking (bicyclist challenge)
+./environment_tracking
+```
 
 ## Project Structure
 
 ```
-LIDAR_3D_OD/
-├── src/
-│   ├── environment.cpp          # Main application and visualization
-│   ├── processPointClouds.cpp   # Point cloud processing with custom algorithms
-│   ├── processPointClouds.h     # Processing class with RANSAC and clustering
-│   ├── render/                  # Visualization utilities
-│   ├── sensors/                 # LiDAR sensor simulation
-│   └── algorithms/
-│       ├── cluster/
-│       │   └── kdtree.h        # Custom 3D KD-Tree implementation
-│       └── ransac/
-│           └── ransac.cpp      # RANSAC plane segmentation
-└── build/                      # Build artifacts
+├── include/              # Headers
+│   ├── Tracker.h
+│   ├── processPointClouds.h
+│   └── algorithms/cluster/kdtree.h
+├── src/                  # Implementation
+│   ├── environment.cpp              # Basic detection
+│   ├── environment_tracking.cpp     # With tracking
+│   ├── processPointClouds.cpp
+│   └── Tracker.cpp
+└── build/
+    ├── environment           # Basic executable
+    └── environment_tracking  # Tracking executable
 ```
-
-## Installation
-
-### Prerequisites
-
-- Ubuntu 20.04 (or compatible Linux distribution)
-- PCL 1.11 or higher
-- Eigen 3
-- C++14 compatible compiler
-
-### Build Instructions
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/22by7-raikar/LIDAR_3D_OD.git
-   cd LIDAR_3D_OD
-   ```
-
-2. **Install dependencies**
-   ```bash
-   sudo apt install libpcl-dev libeigen3-dev
-   ```
-
-3. **Build the project**
-   ```bash
-   mkdir build && cd build
-   cmake ..
-   make
-   ```
-
-4. **Run the application**
-   ```bash
-   ./environment
-   ```
 
 ## Algorithm Details
 
@@ -105,35 +78,51 @@ LIDAR_3D_OD/
 - Voxel size: 0.3m
 - ROI: X [-10, 30], Y [-5, 8], Z [-2, 1]
 
-### Plane Segmentation
-- Max iterations: 25
+
+## Algorithm Details
+
+### RANSAC (3D Plane Segmentation)
+- Iterations: 25
 - Distance threshold: 0.3m
+- Randomly samples 3 points, fits plane via cross product
 
-### Clustering
-- Cluster tolerance: 0.53m
-- Min cluster size: 10 points
-- Max cluster size: 500 points
+### KD-Tree (3D Spatial Indexing)
+- Balanced binary tree with alternating split dimensions (x, y, z)
+- O(log n) search complexity
+- Used for efficient nearest neighbor queries
 
-## Results
+### Euclidean Clustering
+- Tolerance: 0.53m
+- Min/max size: 10-500 points
+- Recursive region growing using KD-Tree
 
-The system successfully:
-- ✅ Detects and segments ground plane using custom RANSAC
-- ✅ Clusters obstacle points using custom KD-Tree and Euclidean clustering
-- ✅ Generates oriented bounding boxes around detected objects
-- ✅ Processes real-world LiDAR data streams in real-time
+## Tracking Features
 
-## Future Improvements
+The `environment_tracking` executable adds:
+- Persistent object IDs across frames
+- Velocity estimation (m/s)
+- Object classification (bicycle, pedestrian, car, truck)
+- Color-coded visualization by object type
 
-- Add object classification (car, pedestrian, cyclist)
-- Implement multi-frame object tracking
-- Optimize KD-Tree for better performance
-- Add velocity estimation for detected objects
+### Tracker Architecture (Extensible)
+
+The tracking system uses an **extensible architecture** for easy algorithm upgrades:
+
+- **`TrackerBase`** - Abstract base class with common functionality
+- **`SimpleTracker`** - Current implementation (nearest neighbor + constant velocity)
+- **`KalmanTracker`** - Stub for Kalman filter + Hungarian algorithm (TODO)
+
+To switch algorithms, simply change the tracker type in `environment_tracking.cpp`:
+```cpp
+// Current
+SimpleTracker tracker(2.0f, 5, 0.1f);
+
+// Future (after implementation)
+KalmanTracker tracker(2.0f, 5, 0.1f);
+```
+
+See `MERGE_GUIDE.md` for implementation details.
 
 ## License
 
-This project is part of the Udacity Sensor Fusion Nanodegree program.
-
-## Acknowledgments
-
-- Udacity Sensor Fusion Nanodegree
-- Point Cloud Library (PCL) community
+Udacity Sensor Fusion Nanodegree project.

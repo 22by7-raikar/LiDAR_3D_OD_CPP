@@ -9,10 +9,6 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/common/transforms.h>
-// Original PCL algorithm includes (Using custom implementations)
-// #include <pcl/segmentation/sac_segmentation.h>
-// #include <pcl/segmentation/extract_clusters.h>
-// #include <pcl/kdtree/kdtree.h>
 #include <iostream> 
 #include <string>  
 #include <vector>
