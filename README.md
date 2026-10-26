@@ -113,3 +113,8 @@ docs/                    ALGORITHMS.md and images
 The sample sequences are KITTI raw scans (Velodyne HDL-64E, 10 Hz) under
 CC BY-NC-SA 3.0. See [data/README.md](data/README.md) for attribution and for
 how to run on your own PCD files.
+
+## License
+
+The code is released under the [MIT License](LICENSE). The sample data in
+`data/` keeps its own licence (CC BY-NC-SA 3.0, see [data/README.md](data/README.md)).
