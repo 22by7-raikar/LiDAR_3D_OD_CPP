@@ -1,0 +1,15 @@
+# Build trees
+build/
+build-*/
+install/
+log/
+
+# Pipeline outputs (CSV dumps); figures in docs/images are generated from these
+output/
+
+# Python
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
