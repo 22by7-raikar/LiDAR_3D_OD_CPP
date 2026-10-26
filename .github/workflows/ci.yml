@@ -7,7 +7,11 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - name: Install dependencies
@@ -25,17 +29,21 @@ jobs:
         run: ./build/lidar_od_run --data data/sequence_01 --out output --frames 22
 
   ros2:
-    runs-on: ubuntu-24.04
-    container: ros:jazzy
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+    runs-on: ubuntu-latest
+    container: ros:${{ matrix.distro }}
     steps:
       - uses: actions/checkout@v5
       - name: Install dependencies with rosdep
         run: |
           apt-get update
-          rosdep update --rosdistro jazzy
-          rosdep install --from-paths ros2 --ignore-src -y --rosdistro jazzy
+          rosdep update --rosdistro ${{ matrix.distro }}
+          rosdep install --from-paths ros2 --ignore-src -y --rosdistro ${{ matrix.distro }}
       - name: Build the ROS 2 package
         shell: bash
         run: |
-          source /opt/ros/jazzy/setup.bash
+          source /opt/ros/${{ matrix.distro }}/setup.bash
           colcon build --base-paths ros2 --event-handlers console_direct+
