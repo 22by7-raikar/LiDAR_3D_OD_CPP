@@ -1,0 +1,105 @@
+# Default configuration: Velodyne HDL-64E on a car roof (KITTI-style), 10 Hz.
+# Every key is optional; omitted keys keep the built-in defaults, unknown keys
+# are an error. Units are metres, seconds and degrees.
+
+sensor:
+  height: 1.73          # above the road
+  num_rings: 64
+  fov_up_deg: 2.0       # only used when rings cannot be recovered from point order
+  fov_down_deg: -24.9
+  columns: 2048         # range-image width
+  frame_period: 0.1     # used when the sequence has no timestamps.txt
+
+preprocess:
+  roi_min: [-20.0, -12.0, -2.5]
+  roi_max: [40.0, 12.0, 1.0]
+  remove_ego: true
+  ego_min: [-1.5, -1.7, -2.0]
+  ego_max: [2.6, 1.7, 0.5]
+
+ground:
+  method: region        # ransac | region | ray | grid
+  ransac:
+    max_iterations: 200
+    success_probability: 0.999
+    distance_threshold: 0.2
+    max_slope_deg: 15.0
+    sample_max_height: 0.6
+    refine_iterations: 2
+    seed: 42
+  region:
+    zone_edges: [2.7, 12.0, 22.0, 40.0, 80.0]
+    zone_rings: [2, 4, 4, 4]
+    zone_sectors: [16, 32, 54, 32]
+    min_points_per_bin: 10
+    num_seed_points: 20
+    noise_floor: 0.5    # below-road reflections: labelled ground, never used as seeds
+    seed_threshold: 0.4
+    distance_threshold: 0.15
+    iterations: 3
+    uprightness_deg: 45.0
+    max_elevation: 0.7
+    flatness_threshold: 0.002
+    near_range_for_elevation: 22.0
+  ray:
+    sector_deg: 0.4
+    local_max_slope_deg: 8.0
+    general_max_slope_deg: 5.0
+    min_height_threshold: 0.08
+    reclass_distance: 2.0
+    noise_floor: 0.5
+  grid:
+    cell_size: 0.5
+    height_threshold: 0.18
+    max_ground_height: 0.6
+    neighbourhood: 1
+    noise_floor: 0.5
+
+cluster:
+  method: range_image   # range_image | euclidean
+  min_points: 8
+  max_points: 30000
+  range_image:
+    angle_threshold_deg: 10.0
+    max_col_gap: 3
+    max_row_gap: 2
+    max_distance: 1.5
+    use_ring_order: true
+    merge_voxel: 0.4    # joins fragments of surfaces seen at grazing angles
+  euclidean:
+    voxel_leaf: 0.15
+    tolerance: 0.45
+    tolerance_per_meter: 0.012
+
+box:
+  method: lshape        # lshape | pca | aabb
+  criterion: variance   # area | closeness | variance
+  angle_step_deg: 1.0
+  ground_snap: 0.4
+  min_height: 0.3
+  max_height: 4.0
+  max_length: 12.0
+  max_width: 5.0
+  max_bottom_above_ground: 1.0
+
+ego_motion:
+  method: ndt           # ndt | icp | gicp | none
+  max_range: 50.0
+  voxel_leaf: 0.5
+  ndt_resolution: 1.5
+  ndt_step_size: 0.2
+  max_iterations: 40
+  max_correspondence: 1.5
+
+tracker:
+  kalman:
+    accel_noise: 2.0
+    measurement_noise: 0.25
+    initial_velocity_sigma: 5.0
+  gate_chi2: 9.21       # 99 % quantile of chi-square with 2 DoF
+  max_distance: 3.0
+  confirm_hits: 3
+  max_missed_tentative: 1
+  max_missed_confirmed: 5
+  size_smoothing: 0.3
+  history_length: 30

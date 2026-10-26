@@ -1,3 +1,0 @@
-/home/apr/Udacity/sfnd/LIDAR_3D_OD/build/CMakeFiles/rebuild_cache.dir
-/home/apr/Udacity/sfnd/LIDAR_3D_OD/build/CMakeFiles/edit_cache.dir
-/home/apr/Udacity/sfnd/LIDAR_3D_OD/build/CMakeFiles/environment.dir

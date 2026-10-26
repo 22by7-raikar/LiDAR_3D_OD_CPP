@@ -1,128 +1,115 @@
-# LiDAR 3D Object Detection
+# LiDAR 3D Object Detection and Tracking (classical, C++)
 
-<img src="media/final.gif" width="700" height="400" />
+Real-time 3D object detection and multi-object tracking on LiDAR point clouds,
+**without deep learning**. Built in C++17 on PCL and Eigen.
 
-## Overview
+![Tracking the cyclist and surrounding objects](docs/images/00_viewer_3d.png)
 
-C++14 implementation of LiDAR-based 3D object detection with custom RANSAC, KD-Tree, and clustering algorithms.
+```
+point cloud ─► ground segmentation ─► range-image clustering ─► L-shape boxes ─► Kalman + Hungarian tracking
+                                                                    ▲                    ▲
+                                                       local ground height      NDT ego-motion (world frame)
+```
 
-## Features
+* **Ground segmentation:** four interchangeable methods. The default is
+  region-wise plane fitting on a concentric zone model (Patchwork-style), with
+  adaptive RANSAC, a ray-based slope walk and a grid minimum as alternatives.
+* **Clustering:** range-image segmentation (Bogoslavskyi & Stachniss) on the
+  exact laser rings recovered from scan order, about 4 ms per frame. Euclidean
+  clustering on a balanced k-d tree is the alternative.
+* **Boxes:** gravity-aligned L-shape fitting (Zhang et al.) that is robust to
+  partial views, with the bottom snapped to the local ground and a filter that
+  rejects walls, vegetation and noise.
+* **Tracking:** a constant-velocity Kalman filter with χ² gating, a
+  negative-log-likelihood cost, a matching cascade and Hungarian assignment,
+  plus a tentative → confirmed → deleted life cycle. Tracks live in a **world
+  frame** estimated by NDT LiDAR odometry, so speeds are absolute.
+* **About 69 ms per frame** on one 2.1 GHz core, including odometry. Detection
+  alone takes about 26 ms.
 
-- **Custom 3D RANSAC** - Ground plane segmentation
-- **Custom 3D KD-Tree** - Spatial indexing for fast nearest neighbor search  
-- **Custom Euclidean Clustering** - Object grouping with KD-Tree optimization
-- **Object Tracking** - Multi-object tracking with velocity estimation and classification
+**[docs/ALGORITHMS.md](docs/ALGORITHMS.md)** explains every algorithm, the
+alternatives, why each default was chosen, and the measured results, with
+figures for each stage.
 
-## Requirements
+| Ground segmentation (4 methods) | Range image and clusters |
+|---|---|
+| ![](docs/images/03_ground_comparison.png) | ![](docs/images/02_range_image.png) |
+| **Box fitting: AABB vs PCA vs L-shape** | **Tracks in the world frame** |
+| ![](docs/images/06_box_fitting.png) | ![](docs/images/09_tracking_world.png) |
 
-- Ubuntu 20.04+
-- PCL 1.11+
-- Eigen 3
-- CMake 3.10+
-- C++14 compiler
+![Tracking animation](docs/images/tracking.gif)
 
-## Build & Run
+## Build
+
+Tested on Ubuntu 24.04 (PCL 1.14, GCC 13); any PCL >= 1.10 with C++17 should work:
 
 ```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-
-# Basic detection
-./environment
-
-# With tracking (bicyclist challenge)
-./environment_tracking
+sudo apt install cmake g++ libpcl-dev libyaml-cpp-dev libgtest-dev
+cmake -S . -B build
+cmake --build build -j
+ctest --test-dir build          # 30 unit tests
 ```
 
-## Project Structure
+The CMake options `LIDAR_OD_BUILD_VIEWER`, `LIDAR_OD_BUILD_TESTS` and
+`LIDAR_OD_BUILD_APPS` (all `ON` by default) turn off parts you do not need.
 
-```
-├── include/              # Headers
-│   ├── Tracker.h
-│   ├── processPointClouds.h
-│   └── algorithms/cluster/kdtree.h
-├── src/                  # Implementation
-│   ├── environment.cpp              # Basic detection
-│   ├── environment_tracking.cpp     # With tracking
-│   ├── processPointClouds.cpp
-│   └── Tracker.cpp
-└── build/
-    ├── environment           # Basic executable
-    └── environment_tracking  # Tracking executable
-```
+## Run
 
-## Algorithm Details
+```bash
+# Interactive 3D viewer: space = pause, n = step, r = restart, v = camera, q = quit
+./build/lidar_od_viewer --data data/sequence_02
 
-### RANSAC 3D Plane Segmentation
-- Randomly samples 3 points to define a plane
-- Computes plane equation using cross product for normal vector
-- Iteratively finds plane with maximum inliers
-- Used for ground plane removal
+# Headless: CSV detections, tracks, poses and per-stage timings, plus a timing summary
+./build/lidar_od_run --data data/sequence_02 --out output/run
 
-### KD-Tree 3D
-- Balanced binary tree for 3D spatial indexing
-- Splits alternately on x, y, z dimensions
-- Efficient nearest neighbor search (O(log n) average case)
-- Used for clustering and spatial queries
-
-### Euclidean Clustering
-- Proximity-based grouping using custom KD-Tree
-- Recursive region growing algorithm
-- Configurable distance tolerance and cluster size limits
-- Separates individual objects from point cloud
-
-## Configuration Parameters
-
-### Point Cloud Filtering
-- Voxel size: 0.3m
-- ROI: X [-10, 30], Y [-5, 8], Z [-2, 1]
-
-
-## Algorithm Details
-
-### RANSAC (3D Plane Segmentation)
-- Iterations: 25
-- Distance threshold: 0.3m
-- Randomly samples 3 points, fits plane via cross product
-
-### KD-Tree (3D Spatial Indexing)
-- Balanced binary tree with alternating split dimensions (x, y, z)
-- O(log n) search complexity
-- Used for efficient nearest neighbor queries
-
-### Euclidean Clustering
-- Tolerance: 0.53m
-- Min/max size: 10-500 points
-- Recursive region growing using KD-Tree
-
-## Tracking Features
-
-The `environment_tracking` executable adds:
-- Persistent object IDs across frames
-- Velocity estimation (m/s)
-- Object classification (bicycle, pedestrian, car, truck)
-- Color-coded visualization by object type
-
-### Tracker Architecture (Extensible)
-
-The tracking system uses an **extensible architecture** for easy algorithm upgrades:
-
-- **`TrackerBase`** - Abstract base class with common functionality
-- **`SimpleTracker`** - Current implementation (nearest neighbor + constant velocity)
-- **`KalmanTracker`** - Stub for Kalman filter + Hungarian algorithm (TODO)
-
-To switch algorithms, simply change the tracker type in `environment_tracking.cpp`:
-```cpp
-// Current
-SimpleTracker tracker(2.0f, 5, 0.1f);
-
-// Future (after implementation)
-KalmanTracker tracker(2.0f, 5, 0.1f);
+# Every algorithm on one frame, for comparisons and figures
+./build/lidar_od_stages --data data/sequence_02 --frame 100 --out output/stages_100
+python3 scripts/render_figures.py --stages output/stages_100 --run output/run \
+    --data data/sequence_02 --out docs/images
 ```
 
-See `MERGE_GUIDE.md` for implementation details.
+All tools accept `--config FILE`. Every parameter lives in
+[`config/default.yaml`](config/default.yaml). An override file needs only the
+keys you change, and unknown keys are an error, so typos never pass silently:
 
-## License
+```yaml
+# my.yaml
+ground:
+  method: ransac
+cluster:
+  method: euclidean
+```
 
-Udacity Sensor Fusion Nanodegree project.
+## ROS 2
+
+`ros2/lidar_od_ros` wraps the pipeline as a node. It subscribes to
+`sensor_msgs/PointCloud2` and publishes ground and obstacle clouds, plus
+detection and track markers for RViz:
+
+```bash
+cd ~/ros2_ws/src && ln -s /path/to/this/repo/ros2/lidar_od_ros .
+cd ~/ros2_ws && rosdep install --from-paths src --ignore-src -y && colcon build
+ros2 launch lidar_od_ros lidar_od.launch.py points:=/velodyne_points
+```
+
+CI builds it against ROS 2 Jazzy.
+
+## Layout
+
+```
+include/lidar_od/        public headers: config, pipeline, ground/, cluster/, box/, tracking/
+src/                     implementations
+apps/                    lidar_od_run, lidar_od_stages, lidar_od_viewer
+tests/                   GoogleTest unit tests on synthetic ray-cast scenes and sample data
+config/default.yaml      all parameters, documented
+scripts/render_figures.py  figures for the docs
+ros2/lidar_od_ros/       ROS 2 node and launch file
+data/                    two sample sequences (see data/README.md for source and licence)
+docs/                    ALGORITHMS.md and images
+```
+
+## Data
+
+The sample sequences are KITTI raw scans (Velodyne HDL-64E, 10 Hz) under
+CC BY-NC-SA 3.0. See [data/README.md](data/README.md) for attribution and for
+how to run on your own PCD files.
