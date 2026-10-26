@@ -1,22 +1,15 @@
-# Build directories
+# Build trees
 build/
-**/build/
-*.o
-*.a
+build-*/
+install/
+log/
+
+# Pipeline outputs (CSV dumps); figures in docs/images are generated from these
+output/
+
+# Python
+__pycache__/
 
 # IDE
 .vscode/
 .idea/
-
-# Compiled executables
-environment
-quizCluster
-quizRansac
-
-# CMake generated files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
-!CMakeLists.txt
